@@ -52,6 +52,7 @@ else:
             libraries=['realsense'],
             include_dirs=inc_dirs,
             library_dirs=lib_dirs,
+            extra_compile_args=['-std=c++0x'],
             language="c++",)])
 
 # create long description from readme for pypi
