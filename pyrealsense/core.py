@@ -575,6 +575,10 @@ class DeviceBase(object):
         rsutilwrapper.deproject_pixel_to_point(point, self.depth_intrinsics, pixel, depth)
         return point
 
+    def transform_point_to_point(self, extrinsics, from_point):
+        point = np.ones(3, dtype=np.float32) * np.NaN
+        rsutilwrapper.transform_point_to_point(point, extrinsics, from_point)
+        return point
     def __enter__(self):
         return self
 
