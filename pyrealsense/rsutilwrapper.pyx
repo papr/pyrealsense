@@ -5,7 +5,7 @@ import numpy as np
 cimport numpy as np
 
 import ctypes
-from libc.stdint cimport uintptr_t, uint16_t
+from libc.stdint cimport uintptr_t, uint16_t, uint8_t
 
 
 cdef extern from "rs.h":
@@ -16,6 +16,8 @@ cdef extern from "rs.h":
     cdef enum rs_ivcam_preset:
         pass
     cdef struct rs_intrinsics:
+        pass
+    cdef struct rs_extrinsics:
         pass
 
 
@@ -33,7 +35,16 @@ cdef extern from "rsutilwrapper.h":
                           const rs_intrinsics* intrin,
                           const uint16_t* depth_image,
                           const float depth_scale)
+    void _transform_point_to_point(float* to_point, 
+                                   const rs_extrinsics * extrin, 
+                                   const float* from_point)
 
+    void _project_pointcloud_to_pixel(uint8_t *image,
+	                                  const rs_intrinsics *depth_intrin,
+	                                  const rs_intrinsics *color_intrin,
+	                                  const rs_extrinsics *depth_to_color_extrin,
+	                                  float *pointcloud,
+	                                  uint8_t *color_image)
 
 def apply_depth_control_preset(device, preset):
     cdef uintptr_t adr = <uintptr_t>ctypes.addressof(device.contents)
@@ -54,3 +65,14 @@ def deproject_pixel_to_point(np.ndarray point, intrin, np.ndarray pixel, depth):
 def deproject_depth(np.ndarray pointcloud, intrin, np.ndarray depth_image, depth_scale):
     cdef uintptr_t adr = <uintptr_t>ctypes.addressof(intrin)
     _deproject_depth(<float*> pointcloud.data, <rs_intrinsics*>adr, <uint16_t*> depth_image.data, depth_scale)
+
+def transform_point_to_point(np.ndarray to_point, extrin, np.ndarray from_point):
+    cdef uintptr_t adr = <uintptr_t>ctypes.addressof(extrin)
+    _transform_point_to_point(<float*> to_point.data,<rs_extrinsics*> adr,<float*> from_point.data)
+
+def project_pointcloud_to_pixel(np.ndarray image, depth_intrin, col_intrin, extrin, np.ndarray pointcloud, np.ndarray col_image):
+    cdef uintptr_t cint_adr = <uintptr_t>ctypes.addressof(col_intrin)
+    cdef uintptr_t ext_adr = <uintptr_t>ctypes.addressof(extrin)
+    cdef uintptr_t dint_adr = <uintptr_t>ctypes.addressof(depth_intrin)
+    _project_pointcloud_to_pixel(<uint8_t*> image.data, <rs_intrinsics*> dint_adr, <rs_intrinsics*> cint_adr, <rs_extrinsics*> ext_adr, <float*> pointcloud.data, <uint8_t*> col_image.data)
+
